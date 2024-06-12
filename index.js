@@ -27,6 +27,7 @@ const generationConfig = {
     topK: 1,
     topP: 1,
     maxOutputTokens: 2048,
+    responseMimeType: "text/plain",
 };
 
 const safetySettings = [
@@ -58,7 +59,8 @@ app.post("/init-chatbot", async (req, res) => {
         const chatTopic = req.body.topic;
     
         const model = genAI.getGenerativeModel({
-            model: geminiModelName
+            model: geminiModelName,
+            systemInstruction: (chatTopic === "Emotions") ? roleInstrEmotions : roleInstrRelationships,
         });
         
         const chat = model.startChat({
@@ -67,7 +69,9 @@ app.post("/init-chatbot", async (req, res) => {
             history: []
         });
     
-        const initialMsg = (chatTopic === "Emotions") ? roleInstrEmotions : roleInstrRelationships;
+        // initial message hidden at the front-end
+        // chat histories require an initial user prompt
+        const initialMsg = "Hello!"; 
         const result = await chat.sendMessage(initialMsg);
         const response = await result.response;
         const text = response.text();
@@ -83,8 +87,10 @@ app.post("/init-chatbot", async (req, res) => {
 
 app.post("/chatbot", async (req, res) => {
     try {
+        const chatTopic = req.body.topic;
         const model = genAI.getGenerativeModel({
-            model: geminiModelName
+            model: geminiModelName,
+            systemInstruction: ( chatTopic === "Emotions") ? roleInstrEmotions : roleInstrRelationships,
         });
 
         const chat = model.startChat({ 
